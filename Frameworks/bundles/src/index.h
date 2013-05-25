@@ -33,13 +33,16 @@ namespace bundles
 
 	PUBLIC extern std::string const kFieldAny;
 
+	PUBLIC extern std::string const kFieldIsDelta;
+	PUBLIC extern std::string const kFieldIsDeleted;
+	PUBLIC extern std::string const kFieldRequiredItems;
+	PUBLIC extern oak::uuid_t const kSeparatorUUID;
+
 	struct item_t;
-	typedef std::tr1::shared_ptr<item_t> item_ptr;
+	typedef std::shared_ptr<item_t> item_ptr;
 
 	struct PUBLIC item_t
 	{
-		typedef std::map<std::string, std::string> string_map_t; // kludge to support empty map as a default argument
-
 		std::string const& name () const;
 		void set_name (std::string const& newName);
 		std::string const& full_name () const;
@@ -47,7 +50,7 @@ namespace bundles
 		oak::uuid_t const& uuid () const;
 		oak::uuid_t bundle_uuid () const;
 		scope::selector_t const& scope_selector () const;
-		std::map<std::string, std::string> environment (std::map<std::string, std::string> base = string_map_t()) const;
+		std::map<std::string, std::string> bundle_variables () const;
 		plist::dictionary_t const& plist () const;
 		kind_t kind () const;
 
@@ -69,14 +72,12 @@ namespace bundles
 
 		item_t (oak::uuid_t const& uuid, item_ptr bundleItem, kind_t kind, bool local = false);
 		static item_ptr menu_item_separator ();
-		static void traverse (std::map<std::string, fs::node_t> const& heads, std::string const& cacheFile);
+		void add_path (std::string const& path);
 		bool initialize (plist::dictionary_t const& plist);
 		void set_plist (plist::dictionary_t const& plist, bool shouldInitialize = true);
 		bool does_match (std::string const& field, std::string const& value, scope::context_t const& scope, int kind, oak::uuid_t const& bundle, double* rank);
 
 	private:
-		void add_path (std::string const& path);
-
 		struct required_bundle_t
 		{
 			required_bundle_t (std::string const& name, oak::uuid_t const& uuid) : _name(name), _uuid(uuid) { }
@@ -106,7 +107,7 @@ namespace bundles
 		std::vector<std::string> _paths;
 		std::multimap<std::string, std::string> _fields;
 
-		mutable std::tr1::shared_ptr<plist::dictionary_t> _plist;
+		mutable std::shared_ptr<plist::dictionary_t> _plist;
 		mutable std::string _full_name;
 		std::vector<required_bundle_t> _required_bundles;
 		std::vector<required_executable_t> _required_executables;
@@ -121,7 +122,6 @@ namespace bundles
 
 	PUBLIC void add_callback (callback_t* cb);
 	PUBLIC void remove_callback (callback_t* cb);
-	PUBLIC void build_index (std::string const& cacheDir = NULL_STR);
 	PUBLIC void add_item (item_ptr item);
 	PUBLIC void remove_item (item_ptr item);
 

@@ -1,38 +1,20 @@
 #import <OakFoundation/OakFindProtocol.h>
-@class FFWindowController;
 
-namespace find
-{
-	struct folder_scan_settings_t;
-	namespace in { enum { document, selection, folder, open_files }; }
-}
+PUBLIC extern NSString* const FFSearchInDocument;
+PUBLIC extern NSString* const FFSearchInSelection;
+extern NSString* const FFSearchInOpenFiles;
 
-@interface Find : NSResponder <OakFindServerProtocol>
-{
-	FFWindowController* windowController;
-
-	NSString* projectIdentifier;
-	NSString* documentIdentifier;
-
-	std::map<std::string, find::folder_scan_settings_t> folderSettings;
-
-	// OakFindProtocolServer
-	find_operation_t findOperation;
-	find::options_t  findOptions;
-	BOOL closeWindowOnSuccess;
-}
+PUBLIC @interface Find : NSResponder <OakFindServerProtocol>
 @property (nonatomic, copy) NSString* projectFolder;
-@property (nonatomic, copy) NSString* searchFolder;
 @property (nonatomic, copy) NSString* projectIdentifier;
 @property (nonatomic, copy) NSString* documentIdentifier;
 
-@property (nonatomic, readonly) BOOL isVisible;
-
-@property (nonatomic, assign) int searchScope;
+@property (nonatomic, readonly) BOOL      isVisible;
+@property (nonatomic, readonly) NSString* searchFolder;
 
 + (Find*)sharedInstance;
 
-- (IBAction)showFindPanel:(id)sender;
+- (void)showFindWindowFor:(NSString*)searchScope;
 - (IBAction)showFolderSelectionPanel:(id)sender;
 - (IBAction)takeFindOptionToToggleFrom:(id)sender;
 

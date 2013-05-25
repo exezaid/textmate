@@ -57,7 +57,7 @@ namespace find
 	// ==============
 	
 	struct dfa_node_t;
-	typedef std::tr1::shared_ptr<dfa_node_t> dfa_node_ptr;
+	typedef std::shared_ptr<dfa_node_t> dfa_node_ptr;
 
 	struct dfa_node_t
 	{
@@ -142,7 +142,7 @@ namespace find
 
 	struct regular_find_t : find_implementation_t
 	{
-		regular_find_t (std::string const& str, options_t options) : options(options), is_at_bow(true)
+		regular_find_t (std::string const& str, options_t options) : options(options)
 		{
 			std::vector< std::vector<std::string> > matrix;
 			iterate(it, diacritics::make_range(str.data(), str.data() + str.size()))
@@ -285,7 +285,6 @@ namespace find
 		std::vector<dfa_node_ptr> const* current_node;
 		std::vector<char> match_data;
 		options_t options;
-		bool is_at_bow;
 
 		dfa_node_ptr node_from_string (std::string const& str, std::vector<dfa_node_ptr> children) const
 		{
@@ -402,7 +401,7 @@ namespace find
 
 				onig_region_free(region, 1);
 			}
-			else
+			else if(buffer.size() < 5 * SQ(1024))
 			{
 				buffer.insert(buffer.end(), buf, buf + len);
 				if(options & backwards)

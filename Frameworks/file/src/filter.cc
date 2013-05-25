@@ -4,6 +4,8 @@
 #include <command/runner.h>
 #include <text/utf8.h>
 #include <regexp/regexp.h>
+#include <settings/settings.h>
+#include <io/path.h>
 #include <oak/server.h>
 #include <oak/debug.h>
 
@@ -23,7 +25,7 @@ static std::vector<bundles::item_ptr> binary_filters (std::string const& event, 
 	{
 		citerate(pattern, (*item)->values_for_field(bundles::kFieldContentMatch))
 		{
-			if(regexp::match_t const& m = regexp::search(*pattern, contentAsString.data(), contentAsString.data() + contentAsString.size()))
+			if(regexp::match_t const& m = regexp::search(*pattern, contentAsString))
 				ordering.insert(std::make_pair(-m.end(), *item));
 		}
 	}
@@ -67,7 +69,7 @@ namespace filter
 	{
 		_client_key = write_server().register_client(this);
 		int newFd = dup(fd);
-		fcntl(newFd, F_SETFD, 1);
+		fcntl(newFd, F_SETFD, FD_CLOEXEC);
 		write_server().send_request(_client_key, (request_t){ newFd, bytes });
 	}
 
@@ -148,9 +150,27 @@ namespace filter
 		return std::vector<bundles::item_ptr>();
 	}
 
+	static std::map<std::string, std::string> path_variables (std::string const& path)
+	{
+		std::map<std::string, std::string> map = oak::basic_environment();
+		if(path != NULL_STR)
+		{
+			map["TM_DISPLAYNAME"] = path::display_name(path);
+			map["TM_FILEPATH"]    = path;
+			map["TM_FILENAME"]    = path::name(path);
+			map["TM_DIRECTORY"]   = path::parent(path);
+		}
+		else
+		{
+			map["TM_DISPLAYNAME"] = "untitled";
+		}
+		return variables_for_path(map, path);
+	}
+
 	void run (bundles::item_ptr filter, std::string const& path, io::bytes_ptr content, callback_ptr context)
 	{
-		command::runner_ptr runner = command::runner(parse_command(filter), ng::buffer_t(), ng::ranges_t(), bundles::environment(file::path_attributes(path), filter->environment(file::variables(path))), command::delegate_ptr(new event_delegate_t(content, context)));
+		std::map<std::string, std::string> variables = path_variables(path);
+		command::runner_ptr runner = command::runner(parse_command(filter), ng::buffer_t(), ng::ranges_t(), bundles::scope_variables(variables << filter->bundle_variables(), file::path_attributes(path)), command::delegate_ptr(new event_delegate_t(content, context)));
 		runner->launch();
 	}
 

@@ -69,7 +69,7 @@ struct delegate_t : command::delegate_t
 	void done ()   { }
 };
 
-typedef std::tr1::shared_ptr<delegate_t> delegate_ptr;
+typedef std::shared_ptr<delegate_t> delegate_ptr;
 
 class run_tests : public CxxTest::TestSuite
 {
@@ -94,7 +94,7 @@ public:
 		plist["output"]  = output;
 
 		delegate_ptr delegate(new delegate_t);
-		command::runner_ptr runner = command::runner(parse_command(convert_command_from_v1(plist)), ng::buffer_t(), ng::ranges_t(), variables_for_path(), delegate);
+		command::runner_ptr runner = command::runner(parse_command(convert_command_from_v1(plist)), ng::buffer_t(), ng::ranges_t(), variables_for_path(oak::basic_environment()), delegate);
 		runner->launch();
 		runner->wait(true);
 		return delegate;
