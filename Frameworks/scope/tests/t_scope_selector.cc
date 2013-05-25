@@ -5,7 +5,6 @@ class ScopeSelectorTests : public CxxTest::TestSuite
 public:
 	void test_child_selector ()
 	{
-		TS_WARN("TODO: Child and anchor selectors");
 		TS_ASSERT_EQUALS(scope::selector_t("foo fud").does_match("foo bar fud"),   true);
 		TS_ASSERT_EQUALS(scope::selector_t("foo > fud").does_match("foo bar fud"), false);
 		TS_ASSERT_EQUALS(scope::selector_t("foo > foo > fud").does_match("foo foo fud"), true);
@@ -13,7 +12,6 @@ public:
 		TS_ASSERT_EQUALS(scope::selector_t("foo > foo > fud").does_match("foo foo fud baz"), true);
 
 		TS_ASSERT_EQUALS(scope::selector_t("foo > foo fud > fud").does_match("foo foo bar fud fud"), true);
-
 	}
 
 	void test_mixed ()
@@ -29,6 +27,14 @@ public:
 				
 	}
 
+	void test_dollar ()
+	{
+		scope::scope_t scope("foo bar");
+		scope::scope_t dyn = scope.append("dyn");
+		TS_ASSERT_EQUALS(scope::selector_t("foo bar$").does_match(dyn), true);
+		TS_ASSERT_EQUALS(scope::selector_t("foo bar dyn$").does_match(dyn), false);
+		TS_ASSERT_EQUALS(scope::selector_t("foo bar dyn").does_match(dyn), true);
+	}
 	void test_anchor ()
 	{
 		TS_ASSERT_EQUALS(scope::selector_t("^ foo").does_match("foo bar"), true);
@@ -64,5 +70,20 @@ public:
 			TS_ASSERT_LESS_THAN(rank, lastRank);
 			lastRank = rank;
 		}
+	}
+
+	void test_rank ()
+	{
+		scope::scope_t const leftScope  = "text.html.php meta.embedded.block.php source.php comment.block.php";
+		scope::scope_t const rightScope = "text.html.php meta.embedded.block.php source.php";
+		scope::context_t const scope(leftScope, rightScope);
+
+		scope::selector_t const globalSelector = "comment.block | L:comment.block";
+		scope::selector_t const phpSelector    = "L:source.php - string";
+
+		double globalRank, phpRank;
+		TS_ASSERT(globalSelector.does_match(scope, &globalRank));
+		TS_ASSERT(phpSelector.does_match(scope, &phpRank));
+		TS_ASSERT_LESS_THAN(phpRank, globalRank);
 	}
 };

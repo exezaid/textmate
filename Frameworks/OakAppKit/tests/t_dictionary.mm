@@ -11,7 +11,7 @@
 {
 	if((self = [super initWithFrame:aRect]))
 	{
-		myTextStorage = [@"This is a test. Try press ⌃⌘D on one of these words." retain];
+		myTextStorage = @"This is a test. Try press ⌃⌘D on one of these words.";
 	}
 	return self;
 }
@@ -23,16 +23,16 @@
 
 - (NSDictionary*)stringAttributes
 {
-	static NSDictionary* attrs = [[NSDictionary dictionaryWithObjectsAndKeys:
-		[NSColor blackColor],                 NSForegroundColorAttributeName,
-		[NSFont userFixedPitchFontOfSize:12], NSFontAttributeName,
-		nil] retain];
+	static NSDictionary* attrs = @{
+		NSForegroundColorAttributeName : [NSColor blackColor],
+		NSFontAttributeName            : [NSFont userFixedPitchFontOfSize:12]
+	};
 	return attrs;
 }
 
 - (void)keyDown:(NSEvent*)anEvent
 {
-	NSLog(@"%s %@", SELNAME(_cmd), anEvent);
+	NSLog(@"%s %@", sel_getName(_cmd), anEvent);
 	[self interpretKeyEvents:@[ anEvent ]];
 }
 
@@ -47,14 +47,14 @@
 {
 	SEL ignore[] = { @selector(isEditable), @selector(inputContext), @selector(_acceptsMarkedText) };
 	if(std::find(ignore, ignore + 3, aSelector) == ignore + 3)
-		NSLog(@"%s %@", SELNAME(_cmd), NSStringFromSelector(aSelector));
+		NSLog(@"%s %@", sel_getName(_cmd), NSStringFromSelector(aSelector));
 	return [super respondsToSelector:aSelector];
 }
 #endif
 
 - (NSTextStorage *)textStorage
 {
-	return [[[NSTextStorage alloc] initWithString:myTextStorage attributes:[self stringAttributes]] autorelease];
+	return [[NSTextStorage alloc] initWithString:myTextStorage attributes:[self stringAttributes]];
 }
 
 // ===============
@@ -63,28 +63,28 @@
 
 - (void)insertText:(id)aString
 {
-	NSLog(@"%s %@", SELNAME(_cmd), aString);
+	NSLog(@"%s %@", sel_getName(_cmd), aString);
 }
 
 - (void)doCommandBySelector:(SEL)aSelector
 {
-	NSLog(@"%s %@", SELNAME(_cmd), NSStringFromSelector(aSelector));
+	NSLog(@"%s %@", sel_getName(_cmd), NSStringFromSelector(aSelector));
 	[self tryToPerform:aSelector with:self];
 }
 
 - (void)setMarkedText:(id)aString selectedRange:(NSRange)selRange
 {
-	NSLog(@"%s %@ %@", SELNAME(_cmd), aString, NSStringFromRange(selRange));
+	NSLog(@"%s %@ %@", sel_getName(_cmd), aString, NSStringFromRange(selRange));
 }
 
 - (void)unmarkText
 {
-	NSLog(@"%s", SELNAME(_cmd));
+	NSLog(@"%s", sel_getName(_cmd));
 }
 
 - (BOOL)hasMarkedText
 {
-	NSLog(@"%s", SELNAME(_cmd));
+	NSLog(@"%s", sel_getName(_cmd));
 	return NO;
 }
 
@@ -95,20 +95,20 @@
 
 - (NSAttributedString*)attributedSubstringFromRange:(NSRange)theRange
 {
-	NSAttributedString* res = [[[NSAttributedString alloc] initWithString:[myTextStorage substringWithRange:theRange] attributes:[self stringAttributes]] autorelease];
-	NSLog(@"%s %@ %@", SELNAME(_cmd), NSStringFromRange(theRange), res);
+	NSAttributedString* res = [[NSAttributedString alloc] initWithString:[myTextStorage substringWithRange:theRange] attributes:[self stringAttributes]];
+	NSLog(@"%s %@ %@", sel_getName(_cmd), NSStringFromRange(theRange), res);
 	return res;
 }
 
 - (NSRange)markedRange
 {
-	NSLog(@"%s", SELNAME(_cmd));
+	NSLog(@"%s", sel_getName(_cmd));
 	return NSMakeRange(NSNotFound, 0);
 }
 
 - (NSRange)selectedRange
 {
-	NSLog(@"%s", SELNAME(_cmd));
+	NSLog(@"%s", sel_getName(_cmd));
 	return NSMakeRange(0, 0);
 }
 
@@ -116,20 +116,20 @@
 {
 	NSRect rect = [self convertRect:NSMakeRect(7.0f * theRange.location, 0, 7.0f * theRange.length, 20.0f) toView:nil];
 	rect.origin = [[self window] convertBaseToScreen:rect.origin];
-	NSLog(@"%s %@ (%@)", SELNAME(_cmd), NSStringFromRange(theRange), NSStringFromRect(rect));
+	NSLog(@"%s %@ (%@)", sel_getName(_cmd), NSStringFromRange(theRange), NSStringFromRect(rect));
 	return rect;
 }
 
 - (NSUInteger)characterIndexForPoint:(NSPoint)thePoint
 {
 	NSUInteger index = floorf([self convertPoint:[[self window] convertScreenToBase:thePoint] fromView:nil].x / 7.0f);
-	NSLog(@"%s %@ (%lu)", SELNAME(_cmd), NSStringFromPoint(thePoint), index);
+	NSLog(@"%s %@ (%lu)", sel_getName(_cmd), NSStringFromPoint(thePoint), index);
 	return index;
 }
 
 - (NSArray*)validAttributesForMarkedText
 {
-	NSLog(@"%s", SELNAME(_cmd));
+	NSLog(@"%s", sel_getName(_cmd));
 	return [[self stringAttributes] allKeys];
 }
 @end
@@ -139,8 +139,8 @@ class DictionaryTests : public CxxTest::TestSuite
 public:
 	void test_dictionary ()
 	{
-		NSAutoreleasePool* pool = [NSAutoreleasePool new];
-		OakSetupApplicationWithView([[[MyTextView alloc] initWithFrame:NSMakeRect(0, 0, 400, 60)] autorelease], "dictionary");
-		[pool drain];
+		@autoreleasepool {
+			OakSetupApplicationWithView([[MyTextView alloc] initWithFrame:NSMakeRect(0, 0, 400, 60)], "dictionary");
+		}
 	}
 };

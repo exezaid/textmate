@@ -7,6 +7,12 @@ namespace be
 {
 	std::vector<entry_ptr> entry_t::kNoChildren(1, entry_ptr());
 
+	std::vector<entry_ptr> const& entry_t::children () const
+	{
+		static std::vector<entry_ptr> const EmptyVector;
+		return setup_children() ? *_children : EmptyVector;
+	}
+
 	struct file_entry_t : entry_t
 	{
 		file_entry_t (std::string const& name, std::string const& path) : entry_t(name, path) { }
@@ -105,7 +111,6 @@ namespace be
 
 	private:
 		bundles::item_ptr _bundle;
-		bundles::kind_t _kind;
 	};
 
 	struct bundle_entry_t : entry_t

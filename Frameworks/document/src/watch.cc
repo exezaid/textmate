@@ -209,12 +209,9 @@ namespace document
 	void watch_server_t::observe (watch_info_t& info, size_t client_id)
 	{
 		info.path_watched = existing_parent(info.path);
-		info.fd = open(info.path_watched.c_str(), O_EVTONLY, 0);
-		if(info.fd == -1)
+		info.fd = open(info.path_watched.c_str(), O_EVTONLY|O_CLOEXEC, 0);
+		if(info.fd == -1) // TODO we need to actually handle this error @allan
 			fprintf(stderr, "error observing path, open(\"%s\"): %s\n", info.path_watched.c_str(), strerror(errno));
-
-		// TODO we need to actually handle this error @allan
-		fcntl(info.fd, F_SETFD, 1);
 
 		struct kevent changeList;
 		struct timespec timeout = { };
@@ -228,7 +225,6 @@ namespace document
 	{
 		oak::set_thread_name("document::watch_server_t");
 
-		signal(SIGPIPE, SIG_IGN);
 		event_queue = kqueue();
 
 		struct kevent changeList;
@@ -272,6 +268,21 @@ namespace document
 						int flags = did_exist ? changed.fflags : NOTE_CREATE;
 						if(does_exist && (changed.fflags & (NOTE_DELETE | NOTE_WRITE)) == NOTE_DELETE)
 							flags ^= (NOTE_DELETE | NOTE_WRITE);
+
+						if((flags & NOTE_RENAME) == NOTE_RENAME)
+						{
+							for(size_t i = 0; i < 100; ++i)
+							{
+								if(path::exists(it->second->path))
+								{
+									flags ^= NOTE_RENAME | (~flags & NOTE_WRITE);
+									close(it->second->fd);
+									observe(*it->second, it->first);
+									break;
+								}
+								usleep(10);
+							}
+						}
 
 						std::string path = (flags & NOTE_RENAME) == NOTE_RENAME ? path::for_fd(it->second->fd) : NULL_STR;
 						struct { size_t client_id; int flags; std::string* path; } packet = { client_id, flags, path == NULL_STR ? NULL : new std::string(path) };
